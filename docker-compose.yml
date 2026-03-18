@@ -1,0 +1,222 @@
+services:
+
+  # ─── PostgreSQL with pgvector ──────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: hrce_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hrce}
+      POSTGRES_USER: ${POSTGRES_USER:-hrce_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hrce_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./graph-db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - hrce-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hrce_user} -d ${POSTGRES_DB:-hrce}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: hrce_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hrce-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── MinIO (Object Storage) ───────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: hrce_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - hrce-net
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── FastAPI Backend ──────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrce_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrce_user}:${POSTGRES_PASSWORD:-hrce_password}@postgres:5432/${POSTGRES_DB:-hrce}
+      - REDIS_HOST=redis
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+      # Stage 11: CORS — frontend container is on port 3000
+      - CORS_ORIGINS=["http://localhost:3000","http://frontend:3000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hrce-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  # ─── Celery Worker ────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrce_worker
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrce_user}:${POSTGRES_PASSWORD:-hrce_password}@postgres:5432/${POSTGRES_DB:-hrce}
+      - REDIS_HOST=redis
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hrce-net
+
+  # ─── Celery Beat (Periodic Task Scheduler) ────────────────
+  # Stage 12: Runs the heartbeat that dispatches scheduled tasks.
+  # Separate from the worker so it doesn't compete for the same process.
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrce_celery_beat
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrce_user}:${POSTGRES_PASSWORD:-hrce_password}@postgres:5432/${POSTGRES_DB:-hrce}
+      - REDIS_HOST=redis
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      - redis
+      - worker
+    networks:
+      - hrce-net
+
+  # ─── Agent Service ────────────────────────────────────────
+  agent-service:
+    build:
+      context: ./agent-service
+      dockerfile: Dockerfile
+    container_name: hrce_agent_service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrce_user}:${POSTGRES_PASSWORD:-hrce_password}@postgres:5432/${POSTGRES_DB:-hrce}
+      - REDIS_HOST=redis
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./agent-service/agents:/app/agents
+      - ./agent-service/tools:/app/tools
+      - ./agent-service/main.py:/app/main.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hrce-net
+
+  # ─── Next.js Frontend ─────────────────────────────────────
+  # Stage 12: Containerized frontend, built with standalone Next.js output.
+  # NEXT_PUBLIC_API_URL is baked in at build time (browser-side calls).
+  # BACKEND_URL is the internal SSR/rewrite target inside the Docker network.
+  frontend:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+      args:
+        # Browser JS uses the public-facing URL (localhost from user's machine)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: hrce_frontend
+    restart: unless-stopped
+    environment:
+      # SSR rewrites inside the container use the Docker service name
+      - BACKEND_URL=http://backend:8000
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - hrce-net
+
+# ─── Volumes ────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+# ─── Network ────────────────────────────────────────────────
+networks:
+  hrce-net:
+    driver: bridge
