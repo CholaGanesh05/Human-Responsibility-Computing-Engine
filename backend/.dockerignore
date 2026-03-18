@@ -1,0 +1,54 @@
+# Backend — Python/Docker ignores
+# ─── Python artefacts ─────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.egg-info/
+dist/
+build/
+
+# ─── Virtual environments ─────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── Secrets ──────────────────────────────────────────────
+.env
+*.env
+
+# ─── Tests (run via docker-compose exec; never baked in) ──
+tests/
+
+# ─── Dev / debug / seed scripts ───────────────────────────
+cleanup_types.py
+debug_alembic.py
+fix_migration_types.py
+init_db_script.py
+init_test_db.py
+inspect_db.py
+seed_data.py
+seed_error.log
+verify_stages.py
+
+# ─── Migration output & logs ──────────────────────────────
+migration_output.txt
+*.log
+*.txt
+!requirements.txt
+
+# ─── Local uploads (not needed in image) ──────────────────
+uploads/
+
+# ─── IDE / OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

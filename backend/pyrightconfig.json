@@ -1,0 +1,21 @@
+{
+    "venvPath": "d:/Human Responsibility Computing Engine (HRCE)/hrce-platform/backend",
+    "venv": ".venv",
+    "pythonVersion": "3.11",
+    "pythonPlatform": "Windows",
+    "extraPaths": [
+        "d:/Human Responsibility Computing Engine (HRCE)/hrce-platform/backend"
+    ],
+    "include": [
+        "app",
+        "alembic",
+        "tests"
+    ],
+    "exclude": [
+        ".venv",
+        "**/__pycache__"
+    ],
+    "typeCheckingMode": "basic",
+    "reportMissingImports": "warning",
+    "reportMissingModuleSource": "none"
+}
