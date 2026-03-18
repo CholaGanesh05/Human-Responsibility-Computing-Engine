@@ -1,9 +1,16 @@
 name: Deploy — Build & Push
 
+# ──────────────────────────────────────────────────────────────────────────────
+# This workflow builds and pushes Docker images to Docker Hub.
+# To enable it, add these secrets to your GitHub repo:
+#   Settings → Secrets and variables → Actions → New repository secret
+#   - DOCKER_USERNAME  (your Docker Hub username)
+#   - DOCKER_PASSWORD  (your Docker Hub access token)
+# Then change the 'on' trigger below back to push/main.
+# ──────────────────────────────────────────────────────────────────────────────
+
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:  # Only runs when manually triggered, not on every push
 
 jobs:
   build-and-push:
