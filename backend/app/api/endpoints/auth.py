@@ -6,12 +6,13 @@ Routes:
   POST /api/v1/auth/login     — verify credentials, return JWT
   GET  /api/v1/auth/me        — return current user profile
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserLogin, UserRead
@@ -22,7 +23,9 @@ router = APIRouter()
 # ─── Register ────────────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def register(
+    request: Request,
     user_in: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -56,7 +59,9 @@ async def register(
 # ─── Login ───────────────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=Token)
+@limiter.limit("10/minute")
 async def login(
+    request: Request,
     credentials: UserLogin,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -87,7 +92,9 @@ async def login(
 # ─── Me ──────────────────────────────────────────────────────────────────────
 
 @router.get("/me", response_model=UserRead)
+@limiter.limit("60/minute")
 async def me(
+    request: Request,
     current_user: User = Depends(get_current_user),
 ) -> UserRead:
     """Return the profile of the currently-authenticated user."""

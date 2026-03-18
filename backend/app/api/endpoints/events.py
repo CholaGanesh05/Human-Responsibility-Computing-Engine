@@ -1,24 +1,26 @@
 """
-HRCE — Events API Endpoints (Stage 11: Auth-protected)
-Full CRUD for events. POST /events also triggers AI decomposition via Celery.
-owner_id is now derived from the authenticated user (no longer a query param).
+HRCE — Events API Endpoints (Auth-protected + Rate Limited)
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
 from app.models.user import User
+from app.schemas.event import EventCreate, EventResponse, EventUpdate
 from app.services.event_service import EventService
 from app.services.responsibility_service import ResponsibilityService
-from app.schemas.event import EventCreate, EventUpdate, EventResponse
 
 router = APIRouter()
 
 
 @router.post("", response_model=EventResponse, status_code=201)
+@limiter.limit("100/minute")
 async def create_event(
+    request: Request,
     event_in: EventCreate,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -41,7 +43,9 @@ async def create_event(
 
 
 @router.get("", response_model=list[EventResponse])
+@limiter.limit("100/minute")
 async def list_events(
+    request: Request,
     skip: int = 0,
     limit: int = 50,
     session: AsyncSession = Depends(get_db),
@@ -53,7 +57,9 @@ async def list_events(
 
 
 @router.get("/{event_id}", response_model=EventResponse)
+@limiter.limit("100/minute")
 async def get_event(
+    request: Request,
     event_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -66,7 +72,9 @@ async def get_event(
 
 
 @router.put("/{event_id}", response_model=EventResponse)
+@limiter.limit("100/minute")
 async def update_event(
+    request: Request,
     event_id: UUID,
     event_in: EventUpdate,
     session: AsyncSession = Depends(get_db),
@@ -80,7 +88,9 @@ async def update_event(
 
 
 @router.delete("/{event_id}", status_code=204)
+@limiter.limit("60/minute")
 async def delete_event(
+    request: Request,
     event_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -92,7 +102,9 @@ async def delete_event(
 
 
 @router.get("/{event_id}/responsibilities")
+@limiter.limit("100/minute")
 async def get_event_responsibilities(
+    request: Request,
     event_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

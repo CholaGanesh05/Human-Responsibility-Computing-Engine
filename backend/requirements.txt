@@ -27,6 +27,10 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
 python-multipart==0.0.20
 
+# ─── Rate Limiting ────────────────────────────────────────────
+slowapi==0.1.9
+limits==3.6.0
+
 # ─── HTTP Client ──────────────────────────────────────────────
 httpx==0.28.1
 

@@ -1,17 +1,21 @@
 """
-HRCE Backend — FastAPI Application Entry Point (Stage 1 — Updated)
+HRCE Backend — FastAPI Application Entry Point
 Includes lifespan context manager for DB + Redis startup/shutdown.
 """
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.router import api_router
 from app.api.ws.ws_router import ws_router
 from app.core.config import settings
 from app.core.database import connect_db, disconnect_db
 from app.core.logging import logger, setup_logging
+from app.core.rate_limit import limiter
 from app.core.redis_client import connect_redis, disconnect_redis
 
 # ─── Logging ──────────────────────────────────────────────────
@@ -43,10 +47,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ─── Rate Limiting ────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 # ─── CORS ─────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,  # Stage 11: tightened from ["*"]
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +63,7 @@ app.add_middleware(
 
 # ─── Routers ──────────────────────────────────────────────────
 app.include_router(api_router)
-app.include_router(ws_router)  # Stage 8: WebSocket live push (/ws/{user_id})
+app.include_router(ws_router)  # WebSocket live push (/ws/{user_id})
 
 
 # ─── Root ─────────────────────────────────────────────────────

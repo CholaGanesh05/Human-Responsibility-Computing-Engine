@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     groq_model: str = "llama3-8b-8192"
 
+    # Agent Service
+    agent_service_url: str = "http://localhost:8001"
+
     # LangSmith
     langchain_tracing_v2: bool = False
     langchain_api_key: str = ""

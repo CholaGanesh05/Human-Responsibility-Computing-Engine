@@ -1,25 +1,28 @@
 """
-HRCE — Responsibilities API Endpoints (Stage 11: Auth-protected)
-CRUD for responsibilities + dependency creation with cascade trigger.
+HRCE — Responsibilities API Endpoints (Auth-protected + Rate Limited)
 """
-from fastapi import APIRouter, Depends, HTTPException, Body
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.user import User
-from app.services.responsibility_service import ResponsibilityService
-from app.services.dependency_service import DependencyService
-from app.schemas.responsibility import ResponsibilityCreate, ResponsibilityUpdate, ResponsibilityResponse
-from app.schemas.dependency import DependencyCreate
 from app.core.event_emitter import emit_responsibility_update
+from app.core.rate_limit import limiter
+from app.models.user import User
+from app.schemas.dependency import DependencyCreate
+from app.schemas.responsibility import ResponsibilityCreate, ResponsibilityResponse, ResponsibilityUpdate
+from app.services.dependency_service import DependencyService
+from app.services.responsibility_service import ResponsibilityService
 
 router = APIRouter()
 
 
 @router.post("", response_model=ResponsibilityResponse, status_code=201)
+@limiter.limit("100/minute")
 async def create_responsibility(
+    request: Request,
     resp_in: ResponsibilityCreate,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -30,7 +33,9 @@ async def create_responsibility(
 
 
 @router.get("", response_model=list[ResponsibilityResponse])
+@limiter.limit("100/minute")
 async def list_responsibilities(
+    request: Request,
     skip: int = 0,
     limit: int = 200,
     session: AsyncSession = Depends(get_db),
@@ -42,7 +47,9 @@ async def list_responsibilities(
 
 
 @router.get("/{responsibility_id}", response_model=ResponsibilityResponse)
+@limiter.limit("100/minute")
 async def get_responsibility(
+    request: Request,
     responsibility_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -55,7 +62,9 @@ async def get_responsibility(
 
 
 @router.put("/{responsibility_id}", response_model=ResponsibilityResponse)
+@limiter.limit("100/minute")
 async def update_responsibility(
+    request: Request,
     responsibility_id: UUID,
     resp_in: ResponsibilityUpdate,
     session: AsyncSession = Depends(get_db),
@@ -89,7 +98,9 @@ async def update_responsibility(
 
 
 @router.delete("/{responsibility_id}", status_code=204)
+@limiter.limit("60/minute")
 async def delete_responsibility(
+    request: Request,
     responsibility_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -102,7 +113,9 @@ async def delete_responsibility(
 
 
 @router.post("/{responsibility_id}/dependencies", status_code=201)
+@limiter.limit("60/minute")
 async def create_dependency(
+    request: Request,
     responsibility_id: UUID,
     blocked_id: UUID = Body(..., embed=True, description="ID of the responsibility that gets BLOCKED"),
     session: AsyncSession = Depends(get_db),

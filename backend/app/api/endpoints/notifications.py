@@ -1,13 +1,14 @@
 """
-HRCE — Notifications API Endpoints (Stage 11: Auth-protected)
-Notifications are now scoped to the authenticated user (no user_id path param).
+HRCE — Notifications API Endpoints (Auth-protected + Rate Limited)
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.services.notification_service import NotificationService
 
@@ -15,7 +16,9 @@ router = APIRouter()
 
 
 @router.get("")
+@limiter.limit("100/minute")
 async def list_notifications(
+    request: Request,
     unread_only: bool = Query(False, description="Return only unread notifications"),
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -44,7 +47,9 @@ async def list_notifications(
 
 
 @router.patch("/{notification_id}/read")
+@limiter.limit("100/minute")
 async def mark_notification_read(
+    request: Request,
     notification_id: UUID,
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -63,7 +68,9 @@ async def mark_notification_read(
 
 
 @router.post("/trigger-scan")
+@limiter.limit("10/minute")
 async def trigger_notification_scan(
+    request: Request,
     current_user: User = Depends(get_current_user),
 ):
     """

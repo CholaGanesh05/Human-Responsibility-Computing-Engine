@@ -1,12 +1,14 @@
 """
-HRCE — Risk API Endpoints (Stage 11: Auth-protected)
+HRCE — Risk API Endpoints (Auth-protected + Rate Limited)
 """
-from fastapi import APIRouter, Depends, HTTPException, Path
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.services.risk_service import RiskService
 
@@ -14,7 +16,9 @@ router = APIRouter()
 
 
 @router.post("/analyze/{responsibility_id}")
+@limiter.limit("20/hour")
 async def analyze_responsibility_risk(
+    request: Request,
     responsibility_id: UUID = Path(..., title="The ID of the responsibility to analyze"),
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -34,7 +38,9 @@ async def analyze_responsibility_risk(
 
 
 @router.get("/score/{responsibility_id}")
+@limiter.limit("60/minute")
 async def get_risk_score(
+    request: Request,
     responsibility_id: UUID = Path(..., title="The ID of the responsibility"),
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
