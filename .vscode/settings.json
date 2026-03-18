@@ -1,0 +1,31 @@
+{
+    // ─── Python Interpreter ───────────────────────────────────────
+    // Absolute path — works regardless of which folder VS Code opened as workspace root
+    "python.defaultInterpreterPath": "d:/Human Responsibility Computing Engine (HRCE)/hrce-platform/backend/.venv/Scripts/python.exe",
+    // ─── Pylance / Pyright Settings ───────────────────────────────
+    "python.analysis.extraPaths": [
+        "d:/Human Responsibility Computing Engine (HRCE)/hrce-platform/backend",
+        "d:/Human Responsibility Computing Engine (HRCE)/hrce-platform/backend/app"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    // ─── Editor ───────────────────────────────────────────────────
+    "editor.formatOnSave": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python",
+        "editor.formatOnSave": true
+    },
+    // ─── Files to exclude from explorer ──────────────────────────
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/node_modules": true,
+        "backend/.venv": true
+    },
+    // ─── Search exclusions ────────────────────────────────────────
+    "search.exclude": {
+        "backend/.venv": true,
+        "**/node_modules": true,
+        "**/__pycache__": true
+    }
+}
