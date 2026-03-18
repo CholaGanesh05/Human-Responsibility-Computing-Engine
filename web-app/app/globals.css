@@ -1,0 +1,208 @@
+/* stylelint-disable */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Custom HRCE animation */
+  --animate-fade-in: fadeIn 0.25s ease-out forwards;
+  --animate-pulse-dot: pulse-dot 1.4s ease-in-out infinite;
+}
+
+:root {
+  --background: oklch(0.12 0.02 255);
+  --foreground: oklch(0.96 0.005 255);
+  --card: oklch(0.16 0.02 255);
+  --card-foreground: oklch(0.96 0.005 255);
+  --popover: oklch(0.16 0.02 255);
+  --popover-foreground: oklch(0.96 0.005 255);
+  --primary: oklch(0.65 0.18 210);
+  --primary-foreground: oklch(0.12 0.02 255);
+  --secondary: oklch(0.22 0.02 255);
+  --secondary-foreground: oklch(0.96 0.005 255);
+  --muted: oklch(0.19 0.02 255);
+  --muted-foreground: oklch(0.58 0.02 255);
+  --accent: oklch(0.55 0.2 295);
+  --accent-foreground: oklch(0.96 0.005 255);
+  --destructive: oklch(0.6 0.22 25);
+  --border: oklch(0.24 0.02 255);
+  --input: oklch(0.24 0.02 255);
+  --ring: oklch(0.65 0.18 210);
+  --radius: 0.75rem;
+
+  /* Custom HRCE design tokens */
+  --sidebar-bg: oklch(0.10 0.02 255);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glow-primary: 0 0 20px oklch(0.65 0.18 210 / 0.15);
+  --glow-accent: 0 0 20px oklch(0.55 0.2 295 / 0.15);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* ─── Reusable CSS classes (plain CSS, no @apply) ────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.glow-primary {
+  box-shadow: var(--glow-primary);
+}
+
+.glow-accent {
+  box-shadow: var(--glow-accent);
+}
+
+/* Sidebar nav items */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: all 150ms ease;
+  text-decoration: none;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+}
+
+.sidebar-item-active {
+  background: oklch(from var(--primary) l c h / 0.10);
+  color: var(--primary);
+  border: 1px solid oklch(from var(--primary) l c h / 0.20);
+}
+
+/* Stat card */
+.stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 200ms ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Page header */
+.page-header {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+/* Badge / chip base */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}

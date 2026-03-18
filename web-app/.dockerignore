@@ -1,0 +1,30 @@
+# Web-App — Node/Docker ignores
+
+# ─── Build artefacts (rebuilt inside Docker) ──────────────
+node_modules
+.next
+out
+
+# ─── Version control ──────────────────────────────────────
+.git
+.gitignore
+
+# ─── Secrets ──────────────────────────────────────────────
+.env*
+
+# ─── Logs / coverage ──────────────────────────────────────
+*.log
+coverage/
+.nyc_output/
+
+# ─── IDE / OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+.eslintcache
+
+# ─── Docs / markdown ──────────────────────────────────────
+*.md
+README*
