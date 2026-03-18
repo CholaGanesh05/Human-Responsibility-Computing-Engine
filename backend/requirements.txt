@@ -1,0 +1,48 @@
+# ─── Core Framework ───────────────────────────────────────────
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+pydantic-settings==2.8.0
+email-validator==2.1.1
+python-dotenv==1.0.1
+
+# ─── Database ─────────────────────────────────────────────────
+sqlalchemy==2.0.38
+asyncpg==0.30.0
+alembic==1.14.1
+psycopg2-binary==2.9.10
+greenlet==3.1.1
+nest_asyncio==1.6.0
+
+# ─── Caching / Workers ────────────────────────────────────────
+redis==5.2.1
+celery==5.4.0
+
+# ─── Object Storage ───────────────────────────────────────────
+minio==7.2.15
+
+# ─── Auth ─────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+python-multipart==0.0.20
+
+# ─── HTTP Client ──────────────────────────────────────────────
+httpx==0.28.1
+
+# ─── Dev / Testing ────────────────────────────────────────────
+pytest==8.3.5
+pytest-asyncio==0.25.3
+anyio[trio]==4.8.0
+flake8==7.1.2
+black==25.1.0
+
+# ─── AI / Vector ──────────────────────────────────────────────────
+--extra-index-url https://download.pytorch.org/whl/cpu
+sentence-transformers==2.5.1
+pgvector==0.2.5
+langchain==0.1.12
+langchain-groq==0.0.1
+PyPDF2==3.0.1
+
+
